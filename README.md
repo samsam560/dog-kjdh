@@ -23,6 +23,18 @@
 除样式外还可调：**速度**（0.5–3×）、**粒子数**（0–60）、**主色**（7 个预设 + 任意取色）、
 **三段文案**（字标 / 开场副标题 / 退场副标题）。
 
+## 截图
+
+| 开场（鲸鱼光扫，默认） | 雷达环 | 打字机 |
+| --- | --- | --- |
+| ![开场](screenshots/01-open-whale.png) | ![雷达环](screenshots/02-style-rings.png) | ![打字机](screenshots/03-style-typewriter.png) |
+
+| 退场（真正退出时） | 设置页「开关动画」面板 |
+| --- | --- |
+| ![退场](screenshots/04-exit-whale.png) | ![设置面板](screenshots/05-settings-panel.png) |
+
+截图由无头 Chrome 加载**同一份 `lib/client.js`** 实拍（不是设计稿），清单见 `screenshots.json`（插件市场详情页读它）。
+
 ## 在设置页改参数
 
 重启 DSH 后：**设置 → 开关动画**（左侧导航最下面，齿轮图标）。面板里能：
