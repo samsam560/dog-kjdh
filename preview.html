@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>dsh-open-exit-animation · 预览</title>
+<style>
+	html, body { margin: 0; height: 100%; background: #05070d; color: #dbe4f3;
+		font: 14px/1.6 "Segoe UI", system-ui, -apple-system, "Microsoft YaHei", sans-serif; }
+	.wrap { max-width: 860px; margin: 0 auto; padding: 40px 24px 80px; }
+	h1 { font-size: 20px; font-weight: 600; letter-spacing: .02em; margin: 0 0 6px; }
+	.sub { color: #7c8aa5; margin-bottom: 28px; }
+	.card { border: 1px solid #1c2437; border-radius: 12px; padding: 18px 18px 14px; background: #0a0e18; margin-bottom: 18px; }
+	.card h2 { font-size: 13px; font-weight: 600; color: #8fa3c8; text-transform: uppercase; letter-spacing: .08em; margin: 0 0 12px; }
+	button { appearance: none; border: 1px solid #24304a; background: #131a2a; color: #dbe4f3;
+		font: inherit; padding: 9px 16px; border-radius: 8px; cursor: pointer; margin: 0 8px 8px 0; }
+	button:hover { background: #1a2438; border-color: #33456b; }
+	button.primary { background: #1d4ed8; border-color: #2563eb; }
+	button.primary:hover { background: #2563eb; }
+	code { background: #111725; border: 1px solid #1d2740; border-radius: 5px; padding: 1px 6px; font-size: 12px; color: #9fb4d8; }
+	ol { padding-left: 20px; color: #93a4c2; }
+	li { margin: 4px 0; }
+	.status { color: #5f7ba8; font-size: 12px; }
+	#panel-host { border: 1px dashed #24304a; border-radius: 10px; padding: 6px 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+	<h1>dsh-open-exit-animation 预览</h1>
+	<div class="sub">默认纯代码自绘、5 套可切换样式，也可以换成你自己的视频 / 动图（二进制存在浏览器本地库 IndexedDB 里，不上传）。这个页面直接加载 <code>lib/client.js</code>（和 DSH 页面里同一个 bundle），所以看到的就是真机效果；下面那块面板和 DSH「设置 → 开关动画」里是同一份代码。</div>
+
+	<div class="card">
+		<h2>播放</h2>
+		<button class="primary" id="open">开场动画</button>
+		<button id="exit">退场动画</button>
+		<button id="both">连续播放（开场 → 退场）</button>
+	</div>
+
+	<div class="card">
+		<h2>动画样式（点一下立刻试播，并写入配置）</h2>
+		<div id="styles"></div>
+	</div>
+
+	<div class="card">
+		<h2>速度（写进 localStorage，与 DSH 内共用）</h2>
+		<button data-speed="0.6">0.6×（更慢）</button>
+		<button data-speed="1">1×（默认）</button>
+		<button data-speed="1.6">1.6×（更快）</button>
+		<button data-speed="2.4">2.4×（很快）</button>
+	</div>
+
+	<div class="card">
+		<h2>快捷开关</h2>
+		<button data-toggle="open">切换「启动时自动播开场」</button>
+		<button data-toggle="exit">切换「真正退出时播退场」</button>
+		<button data-toggle="exitOnClose">切换「点 X 关窗也播」</button>
+		<button data-toggle="particleCount">切换粒子（有/无）</button>
+		<button id="reset">恢复默认</button>
+		<div class="status" id="state"></div>
+	</div>
+
+	<div class="card">
+		<h2>设置页面板（与 DSH 设置页同一份 DOM）</h2>
+		<div id="panel-host"></div>
+	</div>
+
+	<div class="card">
+		<h2>在 DSH 里怎么用</h2>
+		<ol>
+			<li>启动 DSH 时自动播一次开场动画（可在设置里关掉，也可换样式/速度/主色/文案）。</li>
+			<li><strong>真正退出</strong>（托盘右键 → 退出 / 退出应用）时，桌面壳先把窗口亮出来，再 await <code>globalThis.__dshExitAnimation()</code>，播完退场动画才退出。</li>
+			<li><strong>点窗口 X</strong> 默认只隐藏到托盘、不播动画；想让它也播，就在面板「开关」卡里打开「点 X 关窗也播」（<code>exitOnClose</code>）。</li>
+			<li>设置 → <strong>开关动画</strong>（左侧导航最下面）就是面板入口。</li>
+			<li>页面里随时可用 <code>__dshAnim.open()</code> / <code>__dshAnim.exit()</code> 手动预览；快捷键 <code>Ctrl+Alt+O</code> / <code>Ctrl+Alt+X</code>。</li>
+		</ol>
+	</div>
+</div>
+
+<script>
+	// 假 ModuleLoader：真机里这一段由 DSH 的 client-modules 注入，这里只是把 bundle 的注册接住。
+	window.__ModuleLoader__ = { load(registration) { window.__dsaRegistration = registration; } };
+</script>
+<script src="./lib/client.js"></script>
+<script>
+	(function () {
+		var registration = window.__dsaRegistration;
+		if (!registration) { document.body.insertAdjacentHTML("beforeend", "<p>bundle 未注册，请确认 lib/client.js 存在。</p>"); return; }
+		var mod;
+		try {
+			// 预览页没有 React 模块表 ⇒ require 一律抛错；bundle 必须仍然可用（只是不注册设置槽）。
+			mod = registration.factory(function (name) { throw new Error("预览页没有可 require 的模块：" + name); });
+			mod.apply({});
+		} catch (error) {
+			document.body.insertAdjacentHTML("beforeend", "<p>bundle 初始化失败：" + String(error && error.message || error) + "</p>");
+			return;
+		}
+		var anim = window.__dshAnim;
+		var state = document.getElementById("state");
+		function render() {
+			if (!anim) { state.textContent = "__dshAnim 未安装"; return; }
+			var config = anim.get();
+			state.textContent = "当前配置：" + JSON.stringify(config) + " · 版本 " + anim.version;
+		}
+		document.getElementById("open").onclick = function () { anim && anim.open(); };
+		document.getElementById("exit").onclick = function () { anim && anim.exit(); };
+		document.getElementById("both").onclick = function () {
+			if (!anim) return;
+			anim.open().then(function () { return anim.exit(); });
+		};
+		// 样式按钮：点一下立刻试播该样式并保存
+		var styles = (window.__dsaPanel && window.__dsaPanel.styles()) || [];
+		var box = document.getElementById("styles");
+		styles.forEach(function (style) {
+			var button = document.createElement("button");
+			button.textContent = style.label;
+			button.title = style.note;
+			button.onclick = function () {
+				anim.set({ style: style.id, particleCount: style.dots });
+				anim.open(style.id);
+				render();
+			};
+			box.appendChild(button);
+		});
+		for (const button of document.querySelectorAll("[data-speed]")) {
+			button.onclick = function () { anim && anim.set({ speed: Number(button.dataset.speed) }); render(); };
+		}
+		for (const button of document.querySelectorAll("[data-toggle]")) {
+			button.onclick = function () {
+				if (!anim) return;
+				var key = button.dataset.toggle;
+				var config = anim.get();
+				var patch = {};
+				if (key === "particleCount") patch.particleCount = config.particleCount > 0 ? 0 : 26;
+				else patch[key] = !config[key];
+				anim.set(patch); render();
+			};
+		}
+		document.getElementById("reset").onclick = function () { anim && anim.reset(); render(); };
+		// 面板预览：与 DSH 设置页同一份代码（React 只负责给一个容器）
+		if (window.__dsaPanel && window.__dsaPanel.mount) {
+			window.__dsaPanel.mount(document.getElementById("panel-host"));
+		}
+		render();
+	})();
+</script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+{
+  "name": "dsh-open-exit-animation",
+  "version": "0.3.1",
+  "private": false,
+  "description": "DeepSeek Harness 开场与退场动画：默认纯代码自绘（5 套可切换样式：鲸鱼光扫 / 极简脉冲 / 星尘汇聚 / 打字机 / 雷达环），也可以换成用户自己的视频 / 动图（存在浏览器本地库 IndexedDB，不上传不联网）；可调速度、粒子、主色、文案、静音、素材最长播放、画面适配；设置 → 开关动画 里即时改。打开 DSH 播开场片头；配合桌面壳补丁，托盘退出 / 退出应用会先播完退场动画（点 X 关窗默认只隐藏到托盘、不播，可在面板里打开）。",
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "animation",
+    "splash",
+    "intro",
+    "outro"
+  ],
+  "type": "module",
+  "main": "./lib/index.js",
+  "exports": {
+    ".": {
+      "default": "./lib/index.js"
+    },
+    "./client": {
+      "default": "./lib/client.js"
+    },
+    "./package.json": "./package.json",
+    "./cordis.patch.yml": "./cordis.patch.yml"
+  },
+  "files": [
+    "lib",
+    "tools",
+    "cordis.patch.yml",
+    "preview.html",
+    "README.md",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/samsam560/dog-kjdh.git"
+  },
+  "homepage": "https://github.com/samsam560/dog-kjdh#readme",
+  "bugs": {
+    "url": "https://github.com/samsam560/dog-kjdh/issues"
+  },
+  "author": "samsam560",
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-slots"
+      ],
+      "platform": "web"
+    },
+    "engines": {
+      "dsh": ">=0.1.5-rc.1"
+    }
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}
